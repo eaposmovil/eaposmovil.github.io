@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0F172A">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EAPOS Móvil">
+    <link rel="icon" type="image/png" href="logo_eapos.png">
+    <link rel="shortcut icon" type="image/png" href="logo_eapos.png">
+    <link rel="apple-touch-icon" href="logo_eapos.png">
+    <link rel="manifest" href="manifest.json">
+    <title>EAPOS Móvil — PDV, Ventas, Presupuestos, Abonos y CxC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Librería de Escaneo de Códigos de Barra y QR con Cámara -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Librería para Generar Comprobantes Digitales en PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        #netlify-badge,
+        .netlify-badge,
+        a[href*="netlify.com"],
+        iframe[src*="netlify"] {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen pb-20 select-none">
+
+    <!-- NOTIFICACIONES FLOTANTES (POR ENCIMA DEL LOGIN) -->
+    <div id="toast-movil" class="fixed top-4 left-4 right-4 z-[9999] pointer-events-none space-y-2"></div>
+
+    <!-- PANTALLA DE LOGIN MÓVIL -->
+    <div id="login-movil" class="fixed inset-0 bg-slate-900 flex flex-col justify-center p-6 z-40">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full mx-auto space-y-4">
+            <div class="text-center">
+                <div class="inline-flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-2xl">
+                    <img src="logo_eapos.png" onerror="this.style.display='none'" class="h-7 w-7 rounded bg-white p-0.5 object-contain">
+                    <span class="font-black text-xl tracking-wider">EAPOS MÓVIL</span>
+                </div>
+                <div class="mt-3 flex items-center justify-center space-x-2">
+                    <span id="m-login-emp-nombre" class="text-xs font-black text-slate-700 uppercase">SIN EMPRESA VINCULADA</span>
+                    <button type="button" onclick="alternarCajaEmpresaMovil()" class="text-[11px] bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-600 border">
+                        ⚙️ Cambiar Empresa
+                    </button>
+                </div>
+            </div>
+
+            <div id="m-box-cod" class="bg-slate-100 p-3 rounded-2xl border space-y-2">
+                <label class="block text-[11px] font-black text-slate-700 uppercase">🏢 Vincular Empresa (Código + PIN)</label>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">1. Código o RIF de la Empresa</label>
+                    <input type="text" id="m-input-codigo" value="" autocomplete="off" placeholder="Código o RIF de la Empresa"
+                           onkeydown="if(event.key==='Enter') document.getElementById('m-input-pin-empresa')?.focus()"
+                           class="w-full border p-2 rounded-xl font-mono font-bold text-xs uppercase bg-white">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">2. PIN de Seguridad de la Empresa</label>
+                    <div class="flex space-x-2">
+                        <input type="password" id="m-input-pin-empresa" value="" autocomplete="new-password" placeholder="PIN de Seguridad de la Empresa"
+                               onkeydown="if(event.key==='Enter') vincularNuevaEmpresaConPinMovil()"
+                               class="flex-1 border p-2 rounded-xl font-mono font-bold text-xs bg-white">
+                        <button type="button" onclick="vincularNuevaEmpresaConPinMovil()" class="bg-slate-900 text-white px-3.5 py-2 rounded-xl font-black text-xs whitespace-nowrap">🔗 Conectar</button>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-200 p-2 rounded-xl space-y-1">
+                    <label class="flex items-start space-x-2 cursor-pointer text-[11px] text-slate-700 font-bold leading-tight">
+                        <input type="checkbox" id="m-chk-terminos-empresa" class="mt-0.5 rounded border-slate-400 text-blue-600">
+                        <span>He leído y acepto los Términos, Condiciones y Exoneración de Responsabilidad de EAPOS</span>
+                    </label>
+                    <div class="text-right">
+                        <button type="button" onclick="abrirModalContratoLegalMovil()" class="text-[11px] font-black text-blue-600 underline">
+                            📄 Leer Contrato Completo
+                        </button>
+                    </div>
+                </div>
+                <div id="m-error-empresa" class="hidden bg-red-50 border border-red-300 text-red-700 px-2.5 py-1.5 rounded-xl text-[11px] font-black text-center">
+                    ❌ Código de empresa o PIN de conexión incorrecto
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Sucursal / Sede</label>
+                <select id="m-select-sucursal" disabled class="w-full border border-slate-300 p-2.5 rounded-2xl font-bold text-xs bg-slate-50 disabled:opacity-60">
+                    <option value="">-- Vincule su empresa primero --</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Operador</label>
+                <select id="m-select-usuario" disabled class="w-full border border-slate-300 p-3 rounded-2xl font-bold text-sm bg-slate-50 disabled:opacity-60">
+                    <option value="">-- Vincule su empresa primero --</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Clave Personal</label>
+                <input type="password" id="m-input-pin" inputmode="numeric" placeholder="••••"
+                       oninput="ocultarErrorLoginMovil()"
+                       onkeydown="if(event.key==='Enter') entrarAppMovil()"
+                       class="w-full border border-slate-300 p-3 rounded-2xl font-mono text-center text-2xl tracking-widest bg-slate-50 transition">
+            </div>
+
+            <!-- Alerta Roja de PIN Incorrecto -->
+            <div id="m-login-error" class="hidden bg-red-50 border border-red-300 text-red-700 px-3 py-2.5 rounded-2xl text-xs font-black text-center">
+                ❌ Clave personal incorrecta
+            </div>
+
+            <button onclick="entrarAppMovil()" class="w-full bg-slate-900 active:bg-slate-800 text-white font-black py-3.5 rounded-2xl shadow-lg text-sm">
+                Entrar al Sistema Móvil
+            </button>
+
+            <div class="text-center text-xs text-slate-400 pt-2 border-t">
+                Tasa BCV: <b id="m-login-tasa" class="text-slate-700">...</b>
+            </div>
+        </div>
+    </div>
+
+    <!-- CABECERA FIJA CON SELECTOR DE SUCURSAL Y BOTÓN WHATSAPP (GERENTE) -->
+    <header id="header-eapos-movil" class="bg-slate-900 text-white px-3.5 py-2.5 sticky top-0 z-30 shadow space-y-2">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="logo_eapos.png" onerror="this.style.display='none'" class="h-6 w-6 rounded bg-white p-0.5 object-contain">
+                <div>
+                    <div id="m-header-empresa" class="text-xs font-black tracking-wide uppercase text-white leading-none">---</div>
+                    <div id="m-header-usuario" class="text-[10px] text-slate-400 mt-0.5">---</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1">
+                <button id="btn-config-ws-gerente" onclick="abrirModalConfigWhatsApp()" class="hidden bg-emerald-700 hover:bg-emerald-600 border border-emerald-500 px-2 py-1.5 rounded-xl text-[11px] font-bold text-white" title="Modificar mensaje preestablecido de WhatsApp (Solo Gerente)">
+                    💬 Msj
+                </button>
+                <button onclick="ajustarTasaDesdeMovil()" class="bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-xl text-[11px] font-mono font-bold text-emerald-400">
+                    BCV: <span id="m-header-tasa">...</span> ✏️
+                </button>
+                <button onclick="recargarTodoMovil()" class="bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-xl text-xs" title="Sincronizar">🔄</button>
+                <button onclick="cerrarSesionMovil(false)" class="bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-xl text-xs text-red-300" title="Salir">🚪</button>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-1 border-t border-slate-800">
+            <span class="text-[11px] font-bold text-slate-400 whitespace-nowrap">📍 Sucursal:</span>
+            <select id="m-filtro-sede-global" onchange="refrescarVistasPorSucursal()" class="flex-1 bg-slate-800 border border-slate-700 text-white rounded-xl px-2.5 py-1.5 text-xs font-black focus:outline-none">
+                <option value="TODAS">Todas las Sucursales</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- APARTADO 1 (POR DEFECTO): PDV MÓVIL / CATÁLOGO CON ESCÁNER DE CÁMARA -->
+    <main id="vista-m-precios" class="p-3.5 space-y-3">
+        <div class="sticky top-24 z-20 bg-slate-50 pb-1">
+            <div class="flex space-x-2">
+                <div class="relative flex-1">
+                    <input type="text" id="m-buscar-prod" oninput="filtrarCatalogoMovil(this.value)"
+                           placeholder="🔍 Descripción, código, marca o caja..."
+                           class="w-full p-3.5 pr-16 rounded-2xl border border-slate-300 bg-white shadow-sm text-xs focus:outline-none focus:border-slate-900">
+                    <button onclick="document.getElementById('m-buscar-prod').value=''; filtrarCatalogoMovil('');" class="absolute right-2 top-2.5 text-[11px] bg-slate-100 px-2.5 py-1.5 rounded-xl font-bold text-slate-600">
+                        ✖
+                    </button>
+                </div>
+                <!-- Botón para Abrir Cámara y Escanear Código de Barras o QR -->
+                <button onclick="abrirEscanerCamaraMovil()" class="bg-slate-900 active:bg-slate-800 text-white px-4 rounded-2xl shadow-sm flex items-center space-x-1.5 font-black text-xs whitespace-nowrap">
+                    <span class="text-base">📷</span>
+                    <span>Escanear</span>
+                </button>
+            </div>
+            <div class="flex justify-between items-center mt-1 px-1">
+                <span id="m-contador-prod" class="text-[11px] font-bold text-slate-500">Cargando catálogo...</span>
+                <span class="text-[10px] text-slate-400">Tasa: Bs. <b id="m-precios-tasa-lbl">...</b></span>
+            </div>
+        </div>
+
+        <div id="m-lista-productos" class="space-y-2"></div>
+        <button id="btn-ver-mas-prod" onclick="mostrarMasProductosMovil()" class="hidden w-full py-3 bg-white border border-slate-300 rounded-2xl font-bold text-xs text-slate-700 shadow-sm">
+            ⬇️ Mostrar más productos
+        </button>
+    </main>
+
+    <!-- APARTADO 2: VENTAS Y DEVOLUCIONES POR SUCURSAL -->
+    <main id="vista-m-ventas" class="hidden p-3.5 space-y-3">
+        <div class="grid grid-cols-2 gap-2.5">
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[10px] font-bold text-slate-400 uppercase">Total Ventas Filtradas</div>
+                <div id="m-ven-total-usd" class="text-lg font-black text-slate-900 mt-0.5">$0.00</div>
+                <div id="m-ven-cant" class="text-[10px] text-slate-500">0 notas</div>
+            </div>
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[10px] font-bold text-slate-400 uppercase">Devoluciones</div>
+                <div id="m-dev-total-usd" class="text-lg font-black text-purple-700 mt-0.5">$0.00</div>
+                <div id="m-ven-ganancia" class="text-[10px] font-bold text-emerald-700">Utilidad: $0.00</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+            <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-[11px]">
+                <button id="btn-fven-todas" onclick="cambiarSubfiltroVentas('TODAS')" class="bg-slate-900 text-white font-black py-1.5 rounded-lg">Todas</button>
+                <button id="btn-fven-ventas" onclick="cambiarSubfiltroVentas('VENTAS')" class="text-slate-600 font-bold py-1.5 rounded-lg">🛒 Ventas</button>
+                <button id="btn-fven-devol" onclick="cambiarSubfiltroVentas('DEVOLUCIONES')" class="text-slate-600 font-bold py-1.5 rounded-lg">↩️ Devoluc.</button>
+            </div>
+            <div class="flex space-x-2">
+                <input type="text" id="m-buscar-ventas" oninput="renderizarVentasMovil()" placeholder="🔍 Buscar Nro, Cliente o Cajero..." class="flex-1 border border-slate-300 rounded-xl p-2 text-xs">
+                <input type="date" id="m-fecha-ventas" onchange="renderizarVentasMovil()" class="border border-slate-300 rounded-xl p-2 text-xs font-mono w-32">
+                <button onclick="document.getElementById('m-fecha-ventas').value=''; renderizarVentasMovil();" class="bg-slate-100 px-2.5 rounded-xl text-[11px] font-bold text-slate-600">Todo</button>
+            </div>
+        </div>
+
+        <div id="m-lista-ventas" class="space-y-2"></div>
+    </main>
+
+    <!-- APARTADO 3: PRESUPUESTOS POR SUCURSAL -->
+    <main id="vista-m-presupuestos" class="hidden p-3.5 space-y-3">
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xs font-black text-slate-800 uppercase">📋 Presupuestos y Cotizaciones</h2>
+                <span id="m-pres-contador" class="text-[11px] font-bold text-slate-500">0 guardados</span>
+            </div>
+            <input type="text" id="m-buscar-pres" oninput="renderizarPresupuestosMovil()" placeholder="🔍 Buscar presupuesto por Nro o Cliente..." class="w-full border border-slate-300 rounded-xl p-2.5 text-xs">
+        </div>
+
+        <div id="m-lista-presupuestos" class="space-y-2"></div>
+    </main>
+
+    <!-- APARTADO 4: ABONOS POR SUCURSAL + RECIBIR ABONO -->
+    <main id="vista-m-abonos" class="hidden p-3.5 space-y-3">
+        <div class="bg-slate-900 text-white p-4 rounded-2xl shadow flex justify-between items-center">
+            <div>
+                <div class="text-[10px] text-slate-400 uppercase font-bold">Total Abonos Mostrados</div>
+                <div id="m-abo-total-usd" class="text-2xl font-black text-emerald-400 mt-0.5">$0.00</div>
+                <div id="m-abo-cant" class="text-[10px] text-slate-400">0 recibos</div>
+            </div>
+            <button onclick="abrirModalNuevoAbonoDirecto()" class="bg-emerald-500 active:bg-emerald-400 text-slate-950 font-black px-4 py-3 rounded-2xl text-xs shadow-lg">
+                ➕ Recibir Abono
+            </button>
+        </div>
+
+        <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex space-x-2">
+            <input type="text" id="m-buscar-abonos" oninput="renderizarAbonosMovil()" placeholder="🔍 Buscar cliente, Nro o método..." class="flex-1 border border-slate-300 rounded-xl p-2 text-xs">
+            <input type="date" id="m-fecha-abonos" onchange="renderizarAbonosMovil()" class="border border-slate-300 rounded-xl p-2 text-xs font-mono w-32">
+            <button onclick="document.getElementById('m-fecha-abonos').value=''; renderizarAbonosMovil();" class="bg-slate-100 px-2.5 rounded-xl text-[11px] font-bold text-slate-600">Todo</button>
+        </div>
+
+        <div id="m-lista-abonos" class="space-y-2"></div>
+    </main>
+
+    <!-- APARTADO 5: CUENTAS POR COBRAR (CxC) -->
+    <main id="vista-m-cxc" class="hidden p-3.5 space-y-3">
+        <div class="bg-slate-900 text-white p-4 rounded-2xl shadow flex justify-between items-center">
+            <div>
+                <div class="text-[10px] text-slate-400 uppercase font-bold">Total por Cobrar Global</div>
+                <div id="m-total-cxc-usd" class="text-2xl font-black text-white mt-0.5">$0.00</div>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] text-slate-400 uppercase font-bold">Equivalente BCV</div>
+                <div id="m-total-cxc-bs" class="text-sm font-bold text-slate-300 mt-1">Bs. 0.00</div>
+            </div>
+        </div>
+
+        <div class="flex space-x-2">
+            <input type="text" id="m-buscar-cxc" oninput="renderizarCxCMovil()"
+                   placeholder="🔍 Buscar cliente por nombre o RIF..."
+                   class="flex-1 p-3 rounded-2xl border border-slate-300 bg-white text-xs">
+            <button id="btn-m-cxc-modo" onclick="alternarTodosClientesCxCMovil()" class="bg-white border border-slate-300 px-3 rounded-2xl text-xs font-bold text-slate-700 whitespace-nowrap">
+                Con Saldo
+            </button>
+        </div>
+
+        <div id="m-lista-cxc" class="space-y-2"></div>
+    </main>
+
+    <!-- MODAL 1: VISOR DE COMPROBANTE DIGITAL PNG + WHATSAPP -->
+    <div id="modal-m-detalle-doc" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-end justify-center"></div>
+
+    <!-- MODAL 2: EXPEDIENTE COMPLETO DEL CLIENTE Y RECEPCIÓN DE ABONO -->
+    <div id="modal-m-cliente" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-end justify-center">
+        <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-3.5 max-h-[92vh] flex flex-col">
+            <div class="flex justify-between items-start border-b pb-2.5">
+                <div>
+                    <h3 id="mc-nombre" class="font-black text-sm text-slate-900">Seleccionar Cliente</h3>
+                    <p id="mc-rif" class="text-[11px] font-mono text-slate-500">---</p>
+                </div>
+                <div class="text-right">
+                    <div id="mc-saldo" class="text-lg font-black text-red-600">$0.00</div>
+                    <button onclick="document.getElementById('modal-m-cliente').classList.add('hidden')" class="text-xs text-slate-400 font-bold">✖ Cerrar</button>
+                </div>
+            </div>
+
+            <div id="mc-buscador-box" class="hidden space-y-1.5">
+                <input type="text" id="mc-buscar-input" oninput="filtrarClientesParaAbonoMovil(this.value)"
+                       placeholder="🔍 Buscar cliente por Nombre o Cédula/RIF..."
+                       class="w-full border border-slate-300 p-2.5 rounded-xl text-xs bg-slate-50">
+                <div id="mc-sugerencias-cli" class="hidden max-h-32 overflow-y-auto divide-y border rounded-xl bg-white"></div>
+            </div>
+
+            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2.5 text-xs">
+                <div class="flex justify-between items-center">
+                    <span class="font-black text-slate-800 uppercase">💵 Registrar Abono</span>
+                    <select id="mc-sucursal-abono" class="border border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold bg-white"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="mc-metodo" class="border p-2.5 rounded-xl font-bold bg-white"></select>
+                    <input type="text" id="mc-monto" inputmode="decimal" placeholder="Monto (Bs o $)" class="border p-2.5 rounded-xl font-black text-right bg-white">
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text" id="mc-ref" placeholder="Referencia / Nota opcional" class="flex-1 border p-2.5 rounded-xl bg-white">
+                    <button onclick="guardarAbonoDesdeMovil()" class="bg-slate-900 text-white font-black px-4 py-2.5 rounded-xl shadow">
+                        ✅ Cobrar
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-[11px] font-black text-slate-500 uppercase">Historial Completo del Cliente</span>
+                <button onclick="cobrarPorWhatsAppMovil()" class="bg-emerald-600 text-white px-3 py-1 rounded-xl font-bold text-[11px]">
+                    📲 Estado por WhatsApp
+                </button>
+            </div>
+
+            <div id="mc-movimientos" class="flex-1 overflow-y-auto divide-y text-xs space-y-1"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CONFIGURAR MENSAJES DE WHATSAPP (SOLO GERENTE) -->
+    <div id="modal-m-config-ws" class="hidden fixed inset-0 bg-slate-900/75 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="font-black text-sm text-slate-900">💬 Mensajes Preestablecidos de WhatsApp</h3>
+                    <p class="text-[11px] text-slate-500">Exclusivo Gerente — Personaliza el texto automático</p>
+                </div>
+                <button onclick="document.getElementById('modal-m-config-ws').classList.add('hidden')" class="text-xs bg-slate-100 px-3 py-1.5 rounded-xl font-bold text-slate-600">✖</button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="font-black text-slate-700 uppercase block mb-1">1. Mensaje de Estado de Cuenta / Cobranza (CxC)</label>
+                    <p class="text-[10px] text-slate-400 mb-1">Variables: <code class="bg-slate-100 px-1 rounded">{CLIENTE}</code> <code class="bg-slate-100 px-1 rounded">{EMPRESA}</code> <code class="bg-slate-100 px-1 rounded">{SALDO_USD}</code> <code class="bg-slate-100 px-1 rounded">{SALDO_BS}</code> <code class="bg-slate-100 px-1 rounded">{TASA_BCV}</code></p>
+                    <textarea id="ws-plantilla-cxc" rows="4" class="w-full border border-slate-300 rounded-2xl p-3 text-xs bg-slate-50 focus:outline-none focus:border-slate-900"></textarea>
+                </div>
+
+                <div>
+                    <label class="font-black text-slate-700 uppercase block mb-1">2. Mensaje para Notas de Entrega y Presupuestos</label>
+                    <p class="text-[10px] text-slate-400 mb-1">Variables: <code class="bg-slate-100 px-1 rounded">{EMPRESA}</code> <code class="bg-slate-100 px-1 rounded">{SUCURSAL}</code> <code class="bg-slate-100 px-1 rounded">{TIPO_DOC}</code> <code class="bg-slate-100 px-1 rounded">{NRO_DOC}</code> <code class="bg-slate-100 px-1 rounded">{CLIENTE}</code> <code class="bg-slate-100 px-1 rounded">{DETALLE}</code> <code class="bg-slate-100 px-1 rounded">{TOTAL_USD}</code> <code class="bg-slate-100 px-1 rounded">{TOTAL_BS}</code></p>
+                    <textarea id="ws-plantilla-doc" rows="4" class="w-full border border-slate-300 rounded-2xl p-3 text-xs bg-slate-50 focus:outline-none focus:border-slate-900"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t">
+                <button onclick="restaurarPlantillasWhatsAppPorDefecto()" class="text-[11px] font-bold text-slate-500 underline">
+                    Restaurar original
+                </button>
+                <button onclick="guardarPlantillasWhatsAppGerente()" class="bg-slate-900 text-white font-black px-5 py-2.5 rounded-2xl text-xs shadow">
+                    💾 Guardar Mensajes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ESCÁNER DE CÁMARA PARA CÓDIGOS DE BARRA Y QR -->
+    <div id="modal-m-escaner" class="hidden fixed inset-0 bg-slate-950/90 z-50 flex flex-col items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+            <div class="bg-slate-900 text-white px-5 py-3.5 flex justify-between items-center">
+                <div>
+                    <h3 class="font-black text-sm">📷 Escanear Código de Barra / QR</h3>
+                    <p class="text-[10px] text-slate-400">Apunta la cámara hacia el código del producto</p>
+                </div>
+                <button onclick="cerrarEscanerCamaraMovil()" class="bg-slate-800 text-slate-300 px-3 py-1 rounded-xl font-bold text-xs">✖ Cerrar</button>
+            </div>
+            <div class="p-4 bg-black">
+                <div id="lector-camara-movil" class="w-full rounded-2xl overflow-hidden"></div>
+            </div>
+            <div class="p-3.5 text-center bg-slate-50 border-t">
+                <button onclick="cerrarEscanerCamaraMovil()" class="w-full bg-slate-200 text-slate-800 font-bold py-2.5 rounded-xl text-xs">
+                    Cancelar Escaneo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARRA DE NAVEGACIÓN INFERIOR (ORDEN: 1. PDV | 2. VENTAS | 3. PRESUP. | 4. ABONOS | 5. CXC) -->
+    <nav id="nav-eapos-movil" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1.5 grid grid-cols-5 z-30 shadow-lg text-[11px]">
+        <button id="nav-m-precios" onclick="cambiarVistaMovil('PRECIOS')" class="flex flex-col items-center text-blue-600 font-black py-1 border-t-2 border-blue-600">
+            <span class="text-base">🛒</span><span>PDV</span>
+        </button>
+        <button id="nav-m-ventas" onclick="cambiarVistaMovil('VENTAS')" class="flex flex-col items-center text-slate-400 font-bold py-1">
+            <span class="text-base">🧾</span><span>Ventas</span>
+        </button>
+        <button id="nav-m-presupuestos" onclick="cambiarVistaMovil('PRESUPUESTOS')" class="flex flex-col items-center text-slate-400 font-bold py-1">
+            <span class="text-base">📋</span><span>Presup.</span>
+        </button>
+        <button id="nav-m-abonos" onclick="cambiarVistaMovil('ABONOS')" class="flex flex-col items-center text-slate-400 font-bold py-1">
+            <span class="text-base">💵</span><span>Abonos</span>
+        </button>
+        <button id="nav-m-cxc" onclick="cambiarVistaMovil('CXC')" class="flex flex-col items-center text-slate-400 font-bold py-1">
+            <span class="text-base">💳</span><span>CxC</span>
+        </button>
+    </nav>
+
+    <!-- CARGA DE LOS 4 MICRO-MÓDULOS MÓVILES -->
+    <script src="movil_core.js?v=4.6.1"></script>
+    <script src="movil_ventas_abonos.js?v=4.6.1"></script>
+    <script src="movil_presupuestos.js?v=4.6.1"></script>
+    <script src="movil_cxc_precios.js?v=4.6.1"></script>
+
+    <!-- CENTINELA ANTI-INSIGNIA DE NETLIFY (SOLO ELIMINA ELEMENTOS EXTERNOS DE NETLIFY) -->
+    <script>
+        (function() {
+            function limpiarInyeccionesNetlify() {
+                document.querySelectorAll('a[href*="netlify"], [id*="netlify"], [class*="netlify"], iframe[src*="netlify"]').forEach(el => {
+                    el.remove();
+                });
+            }
+            limpiarInyeccionesNetlify();
+            const obs = new MutationObserver(limpiarInyeccionesNetlify);
+            obs.observe(document.documentElement, { childList: true, subtree: true });
+            setInterval(limpiarInyeccionesNetlify, 800);
+        })();
+    </script>
+</body>
+</html>
