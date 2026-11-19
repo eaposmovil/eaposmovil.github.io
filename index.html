@@ -245,10 +245,19 @@
             </button>
         </div>
 
-        <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex space-x-2">
-            <input type="text" id="m-buscar-abonos" oninput="renderizarAbonosMovil()" placeholder="🔍 Buscar cliente, Nro o método..." class="flex-1 border border-slate-300 rounded-xl p-2 text-xs">
-            <input type="date" id="m-fecha-abonos" onchange="renderizarAbonosMovil()" class="border border-slate-300 rounded-xl p-2 text-xs font-mono w-32">
-            <button onclick="document.getElementById('m-fecha-abonos').value=''; renderizarAbonosMovil();" class="bg-slate-100 px-2.5 rounded-xl text-[11px] font-bold text-slate-600">Todo</button>
+        <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+            <div class="flex space-x-2">
+                <input type="text" id="m-buscar-abonos" oninput="renderizarAbonosMovil()" placeholder="🔍 Buscar cliente, Nro o método..." class="flex-1 border border-slate-300 rounded-xl p-2 text-xs">
+                <input type="date" id="m-fecha-abonos" onchange="renderizarAbonosMovil()" class="border border-slate-300 rounded-xl p-2 text-xs font-mono w-32">
+                <button onclick="document.getElementById('m-fecha-abonos').value=''; renderizarAbonosMovil();" class="bg-slate-100 px-2.5 rounded-xl text-[11px] font-bold text-slate-600">Todo</button>
+            </div>
+            <div id="m-wrap-filtro-origen-abonos" class="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-100">
+                <span class="font-black text-slate-700 text-[11px] whitespace-nowrap">🔎 Ver:</span>
+                <select id="m-filtro-origen-abonos" onchange="renderizarAbonosMovil()" class="flex-1 border border-blue-200 rounded-xl p-1.5 font-black text-xs bg-slate-50 text-slate-900">
+                    <option value="CXC" selected>📌 Solo Abonos CxC (Deudas)</option>
+                    <option value="TODOS">📋 Todos los Abonos (Incl. Ventas Directas)</option>
+                </select>
+            </div>
         </div>
 
         <div id="m-lista-abonos" class="space-y-2"></div>
@@ -408,10 +417,10 @@
     </nav>
 
     <!-- CARGA DE LOS 4 MICRO-MÓDULOS MÓVILES -->
-    <script src="movil_core.js?v=4.8.1"></script>
-    <script src="movil_ventas_abonos.js?v=4.8.1"></script>
-    <script src="movil_presupuestos.js?v=4.8.1"></script>
-    <script src="movil_cxc_precios.js?v=4.8.1"></script>
+    <script src="movil_core.js?v=4.9.0"></script>
+    <script src="movil_ventas_abonos.js?v=4.9.0"></script>
+    <script src="movil_presupuestos.js?v=4.9.0"></script>
+    <script src="movil_cxc_precios.js?v=4.9.0"></script>
 
     <!-- CENTINELA ANTI-INSIGNIA DE NETLIFY (SOLO ELIMINA ELEMENTOS EXTERNOS DE NETLIFY) -->
     <script>
