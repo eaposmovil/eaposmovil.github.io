@@ -157,19 +157,23 @@
     <!-- APARTADO 1 (POR DEFECTO): PDV MÓVIL / CATÁLOGO CON ESCÁNER DE CÁMARA -->
     <main id="vista-m-precios" class="p-3.5 space-y-3">
         <div class="sticky top-24 z-20 bg-slate-50 pb-1">
-            <div class="flex space-x-2">
-                <div class="relative flex-1">
+            <div class="flex items-stretch gap-1.5">
+                <div class="relative flex-1 min-w-0">
                     <input type="text" id="m-buscar-prod" oninput="filtrarCatalogoMovil(this.value)"
-                           placeholder="🔍 Descripción, código, marca o caja..."
-                           class="w-full p-3.5 pr-16 rounded-2xl border border-slate-300 bg-white shadow-sm text-xs focus:outline-none focus:border-slate-900">
-                    <button onclick="document.getElementById('m-buscar-prod').value=''; filtrarCatalogoMovil('');" class="absolute right-2 top-2.5 text-[11px] bg-slate-100 px-2.5 py-1.5 rounded-xl font-bold text-slate-600">
+                           placeholder="🔍 Código, descripción o marca..."
+                           class="w-full p-3 pr-10 rounded-2xl border border-slate-300 bg-white shadow-sm text-xs focus:outline-none focus:border-slate-900">
+                    <button onclick="document.getElementById('m-buscar-prod').value=''; filtrarCatalogoMovil('');" class="absolute right-1.5 top-2 text-[11px] bg-slate-100 px-2 py-1.5 rounded-xl font-bold text-slate-600">
                         ✖
                     </button>
                 </div>
                 <!-- Botón para Abrir Cámara y Escanear Código de Barras o QR -->
-                <button onclick="abrirEscanerCamaraMovil()" class="bg-slate-900 active:bg-slate-800 text-white px-4 rounded-2xl shadow-sm flex items-center space-x-1.5 font-black text-xs whitespace-nowrap">
-                    <span class="text-base">📷</span>
-                    <span>Escanear</span>
+                <button type="button" id="btn-m-escanear-prod" onclick="abrirEscanerCamaraMovil()" title="Escanear Código de Barras o QR" class="bg-slate-900 active:bg-slate-800 text-white px-3 rounded-2xl shadow-sm flex items-center space-x-1 font-black text-xs whitespace-nowrap shrink-0">
+                    <span class="text-sm">📷</span>
+                    <span>Esc.</span>
+                </button>
+                <!-- Botón Crear Producto (Exclusivo Admin / Gerente) -->
+                <button type="button" id="btn-m-nuevo-producto" onclick="abrirModalNuevoProductoMovil()" title="Crear nuevo producto (Solo Admin / Gerente)" class="hidden bg-[#2563EB] active:bg-blue-700 text-white px-3 rounded-2xl shadow-sm flex items-center font-black text-xs whitespace-nowrap shrink-0">
+                    <span>+ Producto</span>
                 </button>
             </div>
             <div class="flex justify-between items-center mt-1 px-1">
@@ -404,10 +408,10 @@
     </nav>
 
     <!-- CARGA DE LOS 4 MICRO-MÓDULOS MÓVILES -->
-    <script src="movil_core.js?v=4.6.2"></script>
-    <script src="movil_ventas_abonos.js?v=4.6.2"></script>
-    <script src="movil_presupuestos.js?v=4.6.2"></script>
-    <script src="movil_cxc_precios.js?v=4.6.2"></script>
+    <script src="movil_core.js?v=4.7.0"></script>
+    <script src="movil_ventas_abonos.js?v=4.7.0"></script>
+    <script src="movil_presupuestos.js?v=4.7.0"></script>
+    <script src="movil_cxc_precios.js?v=4.7.0"></script>
 
     <!-- CENTINELA ANTI-INSIGNIA DE NETLIFY (SOLO ELIMINA ELEMENTOS EXTERNOS DE NETLIFY) -->
     <script>
