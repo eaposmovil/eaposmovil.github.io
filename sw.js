@@ -1,10 +1,11 @@
 // =========================================================================
-// EAPOS PWA — SERVICE WORKER NETWORK-FIRST BLINDADO PARA CLOUD OTA (v4.9.2)
+// EAPOS PWA — SERVICE WORKER NETWORK-FIRST BLINDADO PARA WEBAPK Y CLOUD OTA
 // Design by EA Perez Corp.
 // =========================================================================
-const EAPOS_PWA_CACHE = 'eapos-pwa-v4.9.2';
+const EAPOS_PWA_CACHE = 'eapos-pwa-v4.9.3';
 
-self.addEventListener('install', (event) => {
+// Sin cache.addAll en install para evitar bloqueos o fallos en el WebAPK Minting Server
+self.addEventListener('install', () => {
     self.skipWaiting();
 });
 
@@ -26,10 +27,20 @@ function esRecursoExcluidoRedDirecta(request) {
     }
     if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') return true;
     const hrefLower = urlObj.href.toLowerCase();
+    // Bypass obligatorio para APIs en tiempo real (Supabase/OTA, ImgBB, DolarAPI)
     if (
         hrefLower.includes('supabase.co') ||
         hrefLower.includes('imgbb.com') ||
         hrefLower.includes('dolarapi.com')
+    ) {
+        return true;
+    }
+    // Bypass obligatorio para manifest.json, sw.js e íconos PNG (evita interferencias con WebAPK)
+    const pathLower = urlObj.pathname.toLowerCase();
+    if (
+        pathLower.endsWith('/manifest.json') ||
+        pathLower.endsWith('/sw.js') ||
+        /\.(png|jpg|jpeg|webp|svg|ico)$/i.test(pathLower)
     ) {
         return true;
     }
@@ -42,7 +53,7 @@ function esArchivoAppCacheable(request) {
         if (urlObj.origin !== self.location.origin) return false;
         const path = urlObj.pathname.toLowerCase();
         if (request.mode === 'navigate' || path === '/' || path.endsWith('/')) return true;
-        return /\.(html|js|css|json|png|jpg|jpeg|webp|svg|ico)$/i.test(path);
+        return /\.(html|js|css)$/i.test(path);
     } catch (e) {
         return false;
     }
@@ -50,11 +61,10 @@ function esArchivoAppCacheable(request) {
 
 self.addEventListener('fetch', (event) => {
     const req = event.request;
-    // EXCLUSIÓN OBLIGATORIA: Bypass directo a la red sin interceptar ni cachear
     if (esRecursoExcluidoRedDirecta(req)) return;
     if (!esArchivoAppCacheable(req)) return;
 
-    // ESTRATEGIA NETWORK-FIRST: siempre intenta traer la versión fresca de internet
+    // ESTRATEGIA NETWORK-FIRST: siempre trae la versión fresca de internet; fallback solo offline
     event.respondWith(
         fetch(req)
             .then((networkRes) => {
@@ -64,6 +74,12 @@ self.addEventListener('fetch', (event) => {
                 }
                 return networkRes;
             })
-            .catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
+            .catch(() =>
+                caches.match(req).then((cached) => {
+                    if (cached) return cached;
+                    if (req.mode === 'navigate') return caches.match('/index.html');
+                    return new Response('', { status: 503, statusText: 'Offline' });
+                })
+            )
     );
 });
