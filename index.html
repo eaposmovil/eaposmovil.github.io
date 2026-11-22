@@ -514,10 +514,61 @@
     </nav>
 
     <!-- CARGA DE LOS 4 MICRO-MÓDULOS MÓVILES -->
-    <script src="movil_core.js?v=4.9.3"></script>
-    <script src="movil_ventas_abonos.js?v=4.9.3"></script>
-    <script src="movil_presupuestos.js?v=4.9.3"></script>
-    <script src="movil_cxc_precios.js?v=4.9.3"></script>
+    <script src="movil_core.js?v=4.9.4"></script>
+    <script src="movil_ventas_abonos.js?v=4.9.4"></script>
+    <script src="movil_presupuestos.js?v=4.9.4"></script>
+    <script src="movil_cxc_precios.js?v=4.9.4"></script>
+
+    <!-- ESCUDO ANTI-PANTALLA AZUL (TEMPORIZADOR 2.5s + CAPTURA DE FALLO FATAL EN APK) -->
+    <script>
+        (function() {
+            window.__EAPOS_LOGIN_LISTO = false;
+            function esApkNativa() {
+                try { return Boolean(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()); }
+                catch (e) { return false; }
+            }
+            function forzarOcultarSplashSeguro() {
+                try {
+                    var sp = document.getElementById('eapos-splash-movil');
+                    if (sp) { sp.classList.add('eapos-splash-oculto'); setTimeout(function() { try { sp.remove(); } catch (e) {} }, 260); }
+                } catch (e) {}
+                try {
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) {
+                        window.Capacitor.Plugins.SplashScreen.hide();
+                    }
+                } catch (e) {}
+            }
+            function mostrarTarjetaFalloFatalApk(detalle) {
+                if (!esApkNativa() || window.__EAPOS_LOGIN_LISTO) return;
+                forzarOcultarSplashSeguro();
+                if (document.getElementById('eapos-error-fatal-apk')) return;
+                var box = document.createElement('div');
+                box.id = 'eapos-error-fatal-apk';
+                box.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0F172A;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,sans-serif;';
+                var msgSeguro = String(detalle || 'Error inesperado al iniciar EAPOS.').slice(0, 260).replace(/[<>]/g, '');
+                box.innerHTML = '<div style="background:#FFFFFF;color:#0F172A;border-radius:24px;padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.45);">' +
+                    '<div style="font-size:28px;margin-bottom:8px;">⚠️</div>' +
+                    '<div style="font-weight:900;font-size:16px;margin-bottom:6px;">No se pudo completar el inicio</div>' +
+                    '<div style="font-size:12px;color:#475569;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px;margin:12px 0;word-break:break-word;">' + msgSeguro + '</div>' +
+                    '<button type="button" onclick="window.location.reload()" style="width:100%;background:#2563EB;color:#FFFFFF;border:none;border-radius:14px;padding:12px 16px;font-weight:800;font-size:13px;cursor:pointer;">🔄 Reintentar</button>' +
+                    '</div>';
+                document.body.appendChild(box);
+            }
+            window.addEventListener('error', function(ev) {
+                var txt = (ev && (ev.message || (ev.error && ev.error.message))) || 'Error de ejecución en arranque';
+                mostrarTarjetaFalloFatalApk(txt);
+            });
+            window.addEventListener('unhandledrejection', function(ev) {
+                var r = ev && ev.reason;
+                var txt = (r && (r.message || String(r))) || 'Promesa rechazada en arranque';
+                mostrarTarjetaFalloFatalApk(txt);
+            });
+            setTimeout(function() {
+                forzarOcultarSplashSeguro();
+                window.__EAPOS_LOGIN_LISTO = true;
+            }, 2500);
+        })();
+    </script>
 
     <!-- CENTINELA ANTI-INSIGNIA DE NETLIFY (SOLO ELIMINA ELEMENTOS EXTERNOS DE NETLIFY) -->
     <script>
