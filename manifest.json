@@ -1,25 +1,33 @@
 {
-  "name": "EAPOS Móvil — Punto de Venta y CxC",
-  "short_name": "EAPOS Móvil",
-  "description": "Sistema POS Multi-Sucursal EAPOS (Design by EA Perez Corp.)",
-  "start_url": "./index.html",
+  "id": "/",
+  "name": "EAPOS — Sistema Punto de Venta",
+  "short_name": "EAPOS",
+  "description": "Punto de Venta, Inventario, Presupuestos y CxC en tiempo real — Design by EA Perez Corp.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0F172A",
   "theme_color": "#0F172A",
   "icons": [
     {
-      "src": "logo_eapos.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "logo_eapos.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

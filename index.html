@@ -2,15 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0F172A">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="EAPOS Móvil">
-    <link rel="icon" type="image/png" href="logo_eapos.png">
-    <link rel="shortcut icon" type="image/png" href="logo_eapos.png">
-    <link rel="apple-touch-icon" href="logo_eapos.png">
+    <meta name="apple-mobile-web-app-title" content="EAPOS">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
     <title>EAPOS Móvil — PDV, Ventas, Presupuestos, Abonos y CxC</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,6 +19,41 @@
     <!-- Librería para Generar Comprobantes Digitales en PNG -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        html, body {
+            overscroll-behavior-y: contain;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+        }
+        input, textarea, select {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        #header-eapos-movil {
+            padding-top: calc(0.625rem + env(safe-area-inset-top, 0px));
+        }
+        #login-movil {
+            padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+        }
+        #nav-eapos-movil {
+            padding-bottom: calc(0.375rem + env(safe-area-inset-bottom, 0px));
+        }
+        #toast-movil {
+            top: calc(1rem + env(safe-area-inset-top, 0px));
+        }
+        #banner-instalar-eapos-movil {
+            bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+        }
+        #eapos-splash-movil {
+            transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+        }
+        #eapos-splash-movil.eapos-splash-oculto {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
         #netlify-badge,
         .netlify-badge,
         a[href*="netlify.com"],
@@ -34,6 +68,15 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen pb-20 select-none">
+
+    <!-- SPLASH SCREEN INICIAL RÁPIDO (APP NATIVA EAPOS) -->
+    <div id="eapos-splash-movil" class="fixed inset-0 bg-[#0F172A] z-[120] flex flex-col items-center justify-center p-6 text-center select-none">
+        <div class="bg-white rounded-3xl p-4 shadow-2xl border border-slate-200/80 mb-4">
+            <img src="logo_eapos.png" onerror="this.style.display='none'" alt="EAPOS" class="w-20 h-20 object-contain block">
+        </div>
+        <div class="text-white font-black text-2xl tracking-[0.22em]">EAPOS</div>
+        <div class="text-slate-400 text-[11px] font-semibold tracking-wide mt-1">Design by EA Perez Corp.</div>
+    </div>
 
     <!-- NOTIFICACIONES FLOTANTES (POR ENCIMA DEL LOGIN) -->
     <div id="toast-movil" class="fixed top-4 left-4 right-4 z-[9999] pointer-events-none space-y-2"></div>
@@ -397,6 +440,60 @@
         </div>
     </div>
 
+    <!-- BANNER DISCRETO INSTALACIÓN APP OFICIAL (ANDROID / IPHONE SAFARI - OCULTO EN STANDALONE) -->
+    <div id="banner-instalar-eapos-movil" class="hidden fixed left-3 right-3 z-[65] max-w-md mx-auto">
+        <div class="bg-[#0F172A] text-white border border-blue-500/40 rounded-2xl shadow-2xl px-3 py-2.5 flex items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <img src="icon-192.png" onerror="this.src='logo_eapos.png'" alt="EAPOS" class="w-9 h-9 rounded-xl bg-white p-0.5 object-contain shrink-0">
+                <div class="min-w-0">
+                    <div class="text-xs font-black tracking-wide leading-tight truncate">App Oficial EAPOS</div>
+                    <div id="banner-instalar-eapos-sub" class="text-[10px] text-slate-300 leading-tight truncate">Pantalla completa y acceso instantáneo</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" id="btn-instalar-eapos-movil" onclick="ejecutarInstalacionPWAMovil()" class="bg-[#2563EB] active:bg-blue-700 text-white font-black text-[11px] px-3 py-2 rounded-xl shadow whitespace-nowrap">
+                    📲 Instalar App Oficial
+                </button>
+                <button type="button" onclick="cerrarBannerInstalarPWAMovil()" aria-label="Ocultar aviso de instalación" class="bg-slate-800 text-slate-300 font-black text-xs px-2.5 py-2 rounded-xl">
+                    ✕
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MINI-INSTRUCTIVO INSTALACIÓN EN IPHONE (SAFARI iOS) -->
+    <div id="modal-m-instalar-ios" class="hidden fixed inset-0 bg-slate-950/80 z-[110] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <img src="apple-touch-icon.png" onerror="this.src='logo_eapos.png'" alt="EAPOS iOS" class="w-10 h-10 rounded-2xl border border-slate-200 object-contain">
+                    <div>
+                        <h3 class="font-black text-sm text-[#0F172A]">Instalar EAPOS en iPhone</h3>
+                        <p class="text-[11px] text-slate-500">Acceso directo en pantalla completa</p>
+                    </div>
+                </div>
+                <button type="button" onclick="cerrarModalInstalarIOSMovil()" class="bg-slate-100 text-slate-600 font-black text-xs px-2.5 py-1.5 rounded-xl">✕</button>
+            </div>
+            <div class="space-y-2.5 text-xs text-slate-700">
+                <div class="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <span class="w-6 h-6 rounded-full bg-[#0F172A] text-white font-black text-xs flex items-center justify-center shrink-0">1</span>
+                    <div class="leading-snug">
+                        Toca el ícono <b class="text-[#0F172A]">Compartir ⬆️</b> en la barra inferior de Safari.
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                    <span class="w-6 h-6 rounded-full bg-[#2563EB] text-white font-black text-xs flex items-center justify-center shrink-0">2</span>
+                    <div class="leading-snug">
+                        Desliza hacia abajo y elige <b class="text-[#0F172A]">"Agregar a inicio" ➕</b> y luego toca <b class="text-[#2563EB]">Agregar</b>.
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="cerrarModalInstalarIOSMovil()" class="w-full bg-[#0F172A] text-white font-black py-3 rounded-2xl text-xs shadow">
+                Entendido
+            </button>
+        </div>
+    </div>
+
     <!-- BARRA DE NAVEGACIÓN INFERIOR (ORDEN: 1. PDV | 2. VENTAS | 3. PRESUP. | 4. ABONOS | 5. CXC) -->
     <nav id="nav-eapos-movil" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1.5 grid grid-cols-5 z-30 shadow-lg text-[11px]">
         <button id="nav-m-precios" onclick="cambiarVistaMovil('PRECIOS')" class="flex flex-col items-center text-blue-600 font-black py-1 border-t-2 border-blue-600">
@@ -417,10 +514,10 @@
     </nav>
 
     <!-- CARGA DE LOS 4 MICRO-MÓDULOS MÓVILES -->
-    <script src="movil_core.js?v=4.9.1"></script>
-    <script src="movil_ventas_abonos.js?v=4.9.1"></script>
-    <script src="movil_presupuestos.js?v=4.9.1"></script>
-    <script src="movil_cxc_precios.js?v=4.9.1"></script>
+    <script src="movil_core.js?v=4.9.2"></script>
+    <script src="movil_ventas_abonos.js?v=4.9.2"></script>
+    <script src="movil_presupuestos.js?v=4.9.2"></script>
+    <script src="movil_cxc_precios.js?v=4.9.2"></script>
 
     <!-- CENTINELA ANTI-INSIGNIA DE NETLIFY (SOLO ELIMINA ELEMENTOS EXTERNOS DE NETLIFY) -->
     <script>
