@@ -54,17 +54,6 @@
             visibility: hidden;
             pointer-events: none;
         }
-        #netlify-badge,
-        .netlify-badge,
-        a[href*="netlify.com"],
-        iframe[src*="netlify"] {
-            display: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            pointer-events: none !important;
-            width: 0 !important;
-            height: 0 !important;
-        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen pb-20 select-none">
@@ -567,21 +556,6 @@
                 forzarOcultarSplashSeguro();
                 window.__EAPOS_LOGIN_LISTO = true;
             }, 2500);
-        })();
-    </script>
-
-    <!-- CENTINELA ANTI-INSIGNIA DE NETLIFY (SOLO ELIMINA ELEMENTOS EXTERNOS DE NETLIFY) -->
-    <script>
-        (function() {
-            function limpiarInyeccionesNetlify() {
-                document.querySelectorAll('a[href*="netlify"], [id*="netlify"], [class*="netlify"], iframe[src*="netlify"]').forEach(el => {
-                    el.remove();
-                });
-            }
-            limpiarInyeccionesNetlify();
-            const obs = new MutationObserver(limpiarInyeccionesNetlify);
-            obs.observe(document.documentElement, { childList: true, subtree: true });
-            setInterval(limpiarInyeccionesNetlify, 800);
         })();
     </script>
 </body>

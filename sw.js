@@ -2,7 +2,8 @@
 // EAPOS PWA — SERVICE WORKER NETWORK-FIRST BLINDADO PARA WEBAPK Y CLOUD OTA
 // Design by EA Perez Corp.
 // =========================================================================
-const EAPOS_PWA_CACHE = 'eapos-pwa-v4.9.3';
+const EAPOS_PWA_CACHE = 'eapos-pwa-v5.1.0';
+const EAPOS_FOTOS_CACHE_PROTEGIDO = 'eapos-fotos-validas-v1';
 
 // Sin cache.addAll en install para evitar bloqueos o fallos en el WebAPK Minting Server
 self.addEventListener('install', () => {
@@ -12,7 +13,7 @@ self.addEventListener('install', () => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
-            .then((keys) => Promise.all(keys.filter((k) => k !== EAPOS_PWA_CACHE).map((k) => caches.delete(k))))
+            .then((keys) => Promise.all(keys.filter((k) => k !== EAPOS_PWA_CACHE && k !== EAPOS_FOTOS_CACHE_PROTEGIDO).map((k) => caches.delete(k))))
             .then(() => self.clients.claim())
     );
 });
@@ -27,10 +28,10 @@ function esRecursoExcluidoRedDirecta(request) {
     }
     if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') return true;
     const hrefLower = urlObj.href.toLowerCase();
-    // Bypass obligatorio para APIs en tiempo real (Supabase/OTA, ImgBB, DolarAPI)
+    // Bypass obligatorio para APIs en tiempo real (Supabase/OTA, Cloudflare R2, DolarAPI)
     if (
         hrefLower.includes('supabase.co') ||
-        hrefLower.includes('imgbb.com') ||
+        hrefLower.includes('r2.dev') ||
         hrefLower.includes('dolarapi.com')
     ) {
         return true;
