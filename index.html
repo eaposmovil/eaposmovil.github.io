@@ -503,10 +503,10 @@
     </nav>
 
     <!-- CARGA DE LOS 4 MICRO-MÓDULOS MÓVILES -->
-    <script src="movil_core.js?v=5.0.0"></script>
-    <script src="movil_ventas_abonos.js?v=5.0.0"></script>
-    <script src="movil_presupuestos.js?v=5.0.0"></script>
-    <script src="movil_cxc_precios.js?v=5.0.0"></script>
+    <script src="movil_core.js?v=5.3.1"></script>
+    <script src="movil_ventas_abonos.js?v=5.3.1"></script>
+    <script src="movil_presupuestos.js?v=5.3.1"></script>
+    <script src="movil_cxc_precios.js?v=5.3.1"></script>
 
     <!-- ESCUDO ANTI-PANTALLA AZUL (TEMPORIZADOR 2.5s + CAPTURA DE FALLO FATAL EN APK) -->
     <script>
@@ -528,6 +528,7 @@
                 } catch (e) {}
             }
             function mostrarTarjetaFalloFatalApk(detalle) {
+                if (window.__EAPOS_INYECTANDO_OTA) { try { console.error('[EAPOS OTA]', detalle); } catch (e) {} return; }
                 if (!esApkNativa() || window.__EAPOS_LOGIN_LISTO) return;
                 forzarOcultarSplashSeguro();
                 if (document.getElementById('eapos-error-fatal-apk')) return;
