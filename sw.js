@@ -2,7 +2,7 @@
 // EAPOS PWA — SERVICE WORKER NETWORK-FIRST BLINDADO PARA WEBAPK Y CLOUD OTA
 // Design by EA Perez Corp.
 // =========================================================================
-const EAPOS_PWA_CACHE = 'eapos-pwa-v5.3.1';
+const EAPOS_PWA_CACHE = 'eapos-pwa-v5.3.2';
 const EAPOS_FOTOS_CACHE_PROTEGIDO = 'eapos-fotos-validas-v1';
 
 // Sin cache.addAll en install para evitar bloqueos o fallos en el WebAPK Minting Server
